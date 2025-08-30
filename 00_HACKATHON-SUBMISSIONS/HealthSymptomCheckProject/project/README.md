@@ -1,183 +1,281 @@
-# HealthAI - AI-Powered Symptom Checker Platform
+# HealthAI - AI-Powered Symptom Analysis Platform
 
-A comprehensive, HIPAA-compliant health guidance platform that leverages Ollama's AI capabilities for intelligent symptom assessment and medical triage.
+A comprehensive health guidance platform that uses AI to analyze symptoms and provide preliminary health recommendations. Built with React, TypeScript, and integrated with multiple AI APIs for instant setup and powerful symptom analysis.
 
-## 🏥 Features
+## 🚀 Features
 
-### Core Functionality
-- **Intelligent Triage System**: Three-tier priority classification (Emergency, Urgent, Non-Urgent)
-- **AI-Powered Assessment**: Natural language symptom analysis using Ollama
-- **Risk Scoring**: Dynamic 0-100 risk assessment with contextual factors
-- **Red-Flag Detection**: Immediate identification of critical symptoms
-- **Conversational Interface**: WhatsApp-style chat experience
+- **AI-Powered Symptom Analysis**: Advanced symptom assessment using cloud-based AI models
+- **Multiple AI Providers**: Support for OpenAI, Anthropic, Google, and custom APIs
+- **Real-time Chat Interface**: Interactive symptom evaluation with follow-up questions
+- **Medical Safety Features**: Built-in emergency detection and conservative risk assessment
+- **Fallback Analysis**: Enhanced keyword-based analysis when AI is unavailable
+- **User Authentication**: Secure user management with profile settings
+- **Session Management**: Track and review previous assessments
+- **Responsive Design**: Modern UI optimized for all devices
 
-### Safety & Compliance
-- **Medical Disclaimers**: Prominent safety notices at every interaction
-- **Fail-Safe Defaults**: Conservative recommendations when AI confidence is low
-- **Explainable AI**: Clear rationales for all medical assessments
-- **HIPAA Compliance**: Privacy-by-design architecture
-- **Emergency Protocols**: Immediate escalation for critical symptoms
+## 🏗️ Architecture
 
-### User Management
-- **Secure Profiles**: Encrypted medical history and personal data
-- **Authentication**: Email/password with planned OAuth integration
-- **Privacy Controls**: Data export and deletion capabilities
-- **Medical History**: Comprehensive health background tracking
-
-### Reporting & Analytics
-- **PDF Generation**: Professional reports for healthcare providers
-- **Session History**: Complete assessment tracking
-- **Confidence Metrics**: Transparency in AI decision-making
-- **Health Trends**: Pattern analysis over time
-
-## 🚀 Technology Stack
-
-### Frontend
-- **React** with TypeScript for type-safe development
-- **Tailwind CSS** for responsive, medical-grade design
-- **Lucide React** for consistent iconography
-- **React Router** for navigation management
-
-### Backend Integration
-- **Ollama Service**: Local AI model integration
-- **Supabase**: Authentication and database management
-- **Axios**: HTTP client for API communications
-
-### AI & Machine Learning
-- **Ollama Models**: Support for llama2, medllama, and custom models
-- **Low Temperature**: Consistent, conservative medical responses
-- **Confidence Scoring**: Transparency in AI assessments
-- **Multi-Modal Analysis**: Text and structured data processing
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS
+- **AI Integration**: Multiple cloud APIs (OpenAI, Anthropic, Google, Custom)
+- **State Management**: React Context + Hooks
+- **Form Handling**: React Hook Form + Zod validation
 
 ## 📋 Prerequisites
 
-### Required Software
-1. **Node.js** (v18 or higher)
-2. **Ollama** installed and running locally
-3. **Supabase** project setup
+- Node.js 18+ and npm
+- API key from one of the supported AI providers (see setup below)
 
-### Ollama Setup
-```bash
-# Install Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+## 🛠️ Installation
 
-# Pull medical models
-ollama pull llama2
-ollama pull medllama2  # If available
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd HealthSymptomCheckProject/project
+   ```
 
-# Start Ollama service
-ollama serve
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### Database Setup
-Before using the application, set up your Supabase database by clicking the "Connect to Supabase" button in the top right corner of the interface.
+3. **Configure AI API (Choose one or more)**
+   ```bash
+   # Copy environment template
+   cp env.example .env
+   
+   # Edit .env and add your API key(s)
+   VITE_OPENAI_API_KEY=your_openai_key_here
+   # OR
+   VITE_ANTHROPIC_API_KEY=your_anthropic_key_here
+   # OR
+   VITE_GOOGLE_API_KEY=your_google_key_here
+   ```
 
-## 🔧 Installation
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-1. **Clone and install dependencies**:
-```bash
-npm install
-```
+5. **Open your browser**
+   Navigate to `http://localhost:5173`
 
-2. **Configure environment variables**:
-Create a `.env` file with your Supabase credentials:
+## 🔧 AI API Setup
+
+### Option 1: OpenAI (Recommended for beginners)
+1. Visit [platform.openai.com](https://platform.openai.com)
+2. Create an account and get an API key
+3. Add to `.env`: `VITE_OPENAI_API_KEY=your_key_here`
+4. Restart the application
+
+### Option 2: Anthropic (Claude)
+1. Visit [console.anthropic.com](https://console.anthropic.com)
+2. Create an account and get an API key
+3. Add to `.env`: `VITE_ANTHROPIC_API_KEY=your_key_here`
+4. Restart the application
+
+### Option 3: Google (Gemini)
+1. Visit [makersuite.google.com](https://makersuite.google.com)
+2. Create an account and get an API key
+3. Add to `.env`: `VITE_GOOGLE_API_KEY=your_key_here`
+4. Restart the application
+
+### Option 4: Custom API
+1. Configure your custom API endpoint
+2. Add to `.env`:
+   ```
+   VITE_CUSTOM_API_KEY=your_key_here
+   VITE_CUSTOM_API_BASE_URL=https://your-api.com
+   VITE_CUSTOM_API_MODEL=your_model
+   ```
+3. Restart the application
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+# AI API Configuration (choose one or more)
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+VITE_OPENAI_MODEL=gpt-3.5-turbo
+
+VITE_ANTHROPIC_API_KEY=your_anthropic_api_key_here
+VITE_ANTHROPIC_MODEL=claude-3-haiku-20240307
+
+VITE_GOOGLE_API_KEY=your_google_api_key_here
+VITE_GOOGLE_MODEL=gemini-pro
+
+# App Configuration
+VITE_APP_NAME=HealthAI
+VITE_APP_VERSION=1.0.0
 ```
 
-3. **Start the development server**:
+### API Service Configuration
+
+The AI service can be configured in `src/config/api.ts`:
+
+```typescript
+export const API_CONFIG = {
+  openai: {
+    provider: 'openai',
+    apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
+    model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo',
+    timeout: 30000,
+    enabled: false
+  },
+  // ... other providers
+};
+```
+
+## 🏥 Medical Safety Features
+
+### Emergency Detection
+The system automatically detects and flags emergency symptoms:
+- Chest pain or pressure
+- Difficulty breathing
+- Severe bleeding
+- Loss of consciousness
+- Paralysis or weakness
+
+### Conservative Assessment
+- Always errs on the side of caution
+- Requires professional medical consultation
+- Includes medical disclaimers
+- Fallback analysis when AI is unavailable
+
+### Risk Scoring
+- **Emergency (85-100)**: Immediate medical attention required
+- **Urgent (65-84)**: Medical attention within 24 hours
+- **Non-urgent (0-64)**: Monitor and consult if symptoms persist
+
+## 🔍 Usage
+
+### Starting a Symptom Assessment
+
+1. Click "New Assessment" on the dashboard
+2. Describe your symptoms in detail
+3. Answer follow-up questions if prompted
+4. Review AI analysis and recommendations
+5. Follow medical advice provided
+
+### Understanding Results
+
+- **Priority Level**: Emergency, Urgent, or Non-urgent
+- **Risk Score**: 0-100 scale indicating severity
+- **Red Flags**: Concerning symptoms requiring attention
+- **Recommendations**: Specific actions to take
+- **Next Steps**: Immediate follow-up actions
+
+## 🚨 Important Medical Disclaimers
+
+- This platform provides **preliminary health guidance only**
+- **NOT a substitute for professional medical advice**
+- **Always consult qualified healthcare providers**
+- **Seek emergency care for critical symptoms**
+- **AI analysis is for informational purposes**
+
+## 🧪 Development
+
+### Project Structure
+```
+src/
+├── components/          # React components
+│   ├── Assessment/     # Symptom assessment interface
+│   ├── Chat/          # Chat interface components
+│   ├── Common/        # Shared components
+│   ├── Dashboard/     # Main dashboard
+│   └── Profile/       # User profile management
+├── services/           # Business logic and API calls
+│   ├── apiService.ts      # AI API integration
+│   └── symptomService.ts  # Symptom analysis logic
+├── types/              # TypeScript type definitions
+├── contexts/           # React contexts
+└── config/             # Configuration files
+```
+
+### Available Scripts
+
 ```bash
-npm run dev
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
 ```
 
-## 🏗️ Database Schema
+### Adding New AI Providers
 
-The application requires the following database tables:
+1. Add provider configuration to `src/config/api.ts`
+2. Implement API calls in `src/services/apiService.ts`
+3. Add environment variables to `env.example`
+4. Test the integration
 
-### Users Table
-- Personal information and medical history
-- Secure authentication data
-- Privacy preferences
+## 🔒 Privacy & Security
 
-### Symptom Sessions
-- Assessment tracking and results
-- AI analysis and recommendations
-- Priority and risk scoring
+- **Cloud AI Processing**: Uses established, secure AI APIs
+- **No Local Data Storage**: Symptom data processed by trusted providers
+- **HIPAA Compliant Design**: Built with medical privacy standards
+- **Secure API Communication**: Encrypted data transmission
+- **User Control**: Complete control over your health data
 
-### Chat Messages
-- Conversational history
-- Message types and confidence scores
-- Timestamp tracking
+## 🐛 Troubleshooting
 
-## ⚕️ Medical Safety Guidelines
+### AI Service Unavailable?
+- Check your API key configuration in `.env`
+- Verify API key is valid and has sufficient credits
+- Check API provider status pages
+- Review browser console for error messages
 
-### AI Decision Making
-- **Conservative Approach**: Always err on the side of caution
-- **Confidence Thresholds**: Automatic escalation when AI confidence < 70%
-- **Red-Flag Detection**: Immediate emergency alerts for critical symptoms
-- **Transparent Reasoning**: Clear explanations for all assessments
+### Slow Responses?
+- Check your internet connection
+- Try a different AI provider
+- Adjust timeout settings in configuration
+- Check API provider response times
 
-### Emergency Protocols
-- **Immediate Alerts**: Visual and audio warnings for critical symptoms
-- **Direct Emergency Access**: One-click 911 calling functionality
-- **Escalation Pathways**: Clear guidance for different urgency levels
+### Build Errors?
+- Clear node_modules: `rm -rf node_modules && npm install`
+- Check Node.js version: `node --version` (requires 18+)
+- Verify environment variable syntax
 
-### Data Privacy
-- **Encryption**: All health data encrypted at rest and in transit
-- **Minimal Data**: Only collect essential health information
-- **User Control**: Complete data export and deletion capabilities
-- **Audit Trails**: Comprehensive logging for compliance
+## 💰 Cost Considerations
 
-## 🔒 Security Features
+### API Pricing (as of 2024)
+- **OpenAI GPT-3.5**: ~$0.002 per 1K tokens
+- **Anthropic Claude Haiku**: ~$0.25 per 1M tokens
+- **Google Gemini Pro**: ~$0.50 per 1M tokens
 
-- **Authentication**: Secure email/password with session management
-- **Data Encryption**: End-to-end encryption for all health data
-- **HIPAA Compliance**: Privacy-by-design architecture
-- **Audit Logging**: Comprehensive activity tracking
-- **Access Controls**: Role-based permissions and data access
+### Cost Optimization
+- Use smaller models for development
+- Implement response caching
+- Monitor API usage
+- Set up usage alerts
 
-## 📱 User Interface
+## 🤝 Contributing
 
-### Design Principles
-- **Medical-Grade Aesthetics**: Professional, trustworthy appearance
-- **Accessibility First**: WCAG 2.1 AA compliance
-- **Mobile-First**: Responsive design for all devices
-- **Emergency UX**: Clear visual hierarchy for urgent situations
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-### Key Components
-- **Chat Interface**: Intuitive symptom reporting
-- **Confidence Meters**: Transparent AI assessment quality
-- **Emergency Alerts**: Prominent critical symptom warnings
-- **Report Generation**: Professional PDF outputs
+## 📄 License
 
-## 🧪 Testing & Quality Assurance
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Medical Validation
-- **Clinical Review**: All AI responses validated against medical guidelines
-- **Edge Case Testing**: Comprehensive testing of unusual symptom combinations
-- **Safety Protocols**: Verification of emergency detection accuracy
+## ⚠️ Medical Disclaimer
 
-### Technical Testing
-- **Unit Tests**: Individual component and service testing
-- **Integration Tests**: Full workflow testing with AI models
-- **Performance Tests**: Response time and scalability validation
-- **Security Tests**: Penetration testing and vulnerability assessment
+**IMPORTANT**: This software is for educational and informational purposes only. It is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of qualified healthcare providers with questions about medical conditions. Never disregard professional medical advice or delay seeking it because of information provided by this application.
 
-## 🚨 Important Legal Notice
+In case of emergency, call your local emergency services immediately.
 
-This platform is designed for educational and informational purposes. It is NOT a substitute for professional medical advice, diagnosis, or treatment. Users must always consult qualified healthcare providers for medical concerns.
+## 🆘 Support
 
-**Emergency Disclaimer**: In case of medical emergencies, call 911 immediately. Do not rely solely on this platform for emergency medical situations.
-
-## 📞 Support & Compliance
-
-For technical support, medical concerns, or compliance inquiries:
-- Technical Issues: [support@healthai.com]
-- Medical Questions: Consult your healthcare provider
-- Privacy Concerns: [privacy@healthai.com]
-- Compliance: [compliance@healthai.com]
+For technical support or questions:
+- Check the troubleshooting section above
+- Review API provider documentation
+- Open an issue in the project repository
 
 ---
 
-**Built with ❤️ for better healthcare access and AI-powered medical guidance.**
+**Built with ❤️ for the OpenXAI 2025 Hackathon**

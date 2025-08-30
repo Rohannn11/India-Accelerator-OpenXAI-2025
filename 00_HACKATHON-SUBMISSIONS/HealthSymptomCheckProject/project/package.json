@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "echo 'Setting up HealthAI...' && echo 'Please run the appropriate setup script:' && echo 'Windows: setup-api.bat' && echo 'Linux/macOS: ./setup-api.sh' && echo 'Or follow the manual setup instructions in QUICKSTART.md'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

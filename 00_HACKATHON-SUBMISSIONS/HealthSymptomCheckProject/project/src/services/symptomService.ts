@@ -1,4 +1,6 @@
 import type { SymptomSession, TriageResult, ChatMessage } from '../types/medical';
+import { APIService, createOpenAIService, createAnthropicService, createGoogleService, createCustomService } from './apiService';
+import { getBestAvailableService } from '../config/api';
 
 // Mock data for development
 const mockSessions: SymptomSession[] = [
@@ -45,6 +47,49 @@ const mockSessions: SymptomSession[] = [
 ];
 
 export class SymptomService {
+  private aiService: APIService | null = null;
+  private aiServiceAvailable: boolean = false;
+
+  constructor() {
+    this.initializeAIService();
+  }
+
+  private async initializeAIService() {
+    try {
+      const apiConfig = getBestAvailableService();
+      
+      if (apiConfig) {
+        switch (apiConfig.provider) {
+          case 'openai':
+            this.aiService = createOpenAIService(apiConfig.apiKey, apiConfig.model);
+            break;
+          case 'anthropic':
+            this.aiService = createAnthropicService(apiConfig.apiKey, apiConfig.model);
+            break;
+          case 'google':
+            this.aiService = createGoogleService(apiConfig.apiKey, apiConfig.model);
+            break;
+          case 'custom':
+            if (apiConfig.baseUrl) {
+              this.aiService = createCustomService(apiConfig.apiKey, apiConfig.baseUrl, apiConfig.model);
+            }
+            break;
+        }
+        
+        if (this.aiService) {
+          this.aiServiceAvailable = await this.aiService.checkServiceHealth();
+          console.log(`AI service available: ${apiConfig.provider} (${apiConfig.model})`);
+        }
+      } else {
+        console.warn('No AI API service configured. Using fallback analysis only.');
+        this.aiServiceAvailable = false;
+      }
+    } catch (error) {
+      console.warn('AI service initialization failed:', error);
+      this.aiServiceAvailable = false;
+    }
+  }
+
   async getUserSessions(userId: string): Promise<SymptomSession[]> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -183,10 +228,79 @@ export class SymptomService {
     userGender: string,
     medicalHistory: string[]
   ): Promise<TriageResult> {
-    // Simulate AI analysis delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock AI analysis logic
+    try {
+      if (this.aiServiceAvailable && this.aiService) {
+        // Use AI API service for analysis
+        const request = {
+          symptoms,
+          userAge,
+          userGender,
+          medicalHistory,
+          conversationHistory: [] // Could be enhanced to include chat history
+        };
+
+        const aiResult = await this.aiService.analyzeSymptoms(request);
+        
+        // Convert AI response to TriageResult format
+        const triageResult: TriageResult = {
+          priority: aiResult.priority,
+          risk_score: aiResult.risk_score,
+          recommendations: aiResult.recommendations,
+          red_flags: aiResult.red_flags,
+          confidence: aiResult.confidence,
+          explanation: aiResult.explanation,
+          next_steps: aiResult.next_steps
+        };
+
+        // Update session with AI results
+        await this.updateSession(sessionId, {
+          risk_score: aiResult.risk_score,
+          priority_level: aiResult.priority,
+          ai_analysis: aiResult.explanation,
+          recommendations: aiResult.recommendations,
+          red_flags: aiResult.red_flags,
+          status: 'completed',
+          end_time: new Date().toISOString()
+        });
+
+        return triageResult;
+      } else {
+        // Fallback to enhanced analysis
+        console.warn('AI service unavailable, using enhanced fallback analysis');
+        return await this.fallbackAnalysis(symptoms, userAge, userGender, medicalHistory);
+      }
+    } catch (error) {
+      console.error('Symptom analysis failed:', error);
+      
+      // Emergency fallback for critical symptoms
+      const criticalSymptoms = ['chest pain', 'difficulty breathing', 'severe bleeding', 'unconscious'];
+      const hasCriticalSymptoms = criticalSymptoms.some(symptom => 
+        symptoms.toLowerCase().includes(symptom)
+      );
+
+      if (hasCriticalSymptoms) {
+        return {
+          priority: 'emergency',
+          risk_score: 90,
+          recommendations: [
+            'Seek immediate emergency medical care',
+            'Call 911 or go to nearest emergency room',
+            'Do not delay treatment'
+          ],
+          red_flags: ['Critical symptoms detected'],
+          confidence: 0.9,
+          explanation: 'Critical symptoms detected requiring immediate emergency care.',
+          next_steps: ['Call emergency services immediately']
+        };
+      }
+
+      // General fallback
+      return await this.fallbackAnalysis(symptoms, userAge, userGender, medicalHistory);
+    }
+  }
+
+  private async fallbackAnalysis(symptoms: string, userAge: number, userGender: string, medicalHistory: string[]): Promise<TriageResult> {
+    console.warn('Using enhanced fallback analysis due to AI service unavailability.');
     const symptomsList = symptoms.toLowerCase().split(/\s+/);
     const hasEmergencySymptoms = symptomsList.some(s => 
       s.includes('chest pain') || 
@@ -240,39 +354,46 @@ export class SymptomService {
       redFlags = [];
     }
 
-    // Update session with results
-    await this.updateSession(sessionId, {
-      risk_score: riskScore,
-      priority_level: priority,
-      ai_analysis: `Analysis based on reported symptoms: ${symptoms}. ${priority === 'emergency' ? 'Emergency symptoms detected requiring immediate care.' : priority === 'urgent' ? 'Urgent symptoms requiring prompt medical attention.' : 'Non-urgent symptoms that can be monitored.'}`,
-      recommendations,
-      red_flags: redFlags,
-      status: 'completed',
-      end_time: new Date().toISOString()
-    });
-
     return {
       priority,
       risk_score: riskScore,
       recommendations,
       red_flags: redFlags,
       confidence: 0.85,
-      explanation: `Analysis based on reported symptoms: ${symptoms}. ${priority === 'emergency' ? 'Emergency symptoms detected requiring immediate care.' : priority === 'urgent' ? 'Urgent symptoms requiring prompt medical attention.' : 'Non-urgent symptoms that can be monitored.'}`,
+      explanation: `Enhanced fallback analysis based on reported symptoms: ${symptoms}. ${priority === 'emergency' ? 'Emergency symptoms detected requiring immediate care.' : priority === 'urgent' ? 'Urgent symptoms requiring prompt medical attention.' : 'Non-urgent symptoms that can be monitored.'}`,
       next_steps: recommendations
     };
   }
 
   async generateFollowUpQuestions(sessionId: string): Promise<string[]> {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Mock follow-up questions
-    return [
-      'How long have you been experiencing these symptoms?',
-      'Have you had similar symptoms before?',
-      'Are you currently taking any medications?',
-      'Have you noticed any triggers that make symptoms worse?'
-    ];
+    try {
+      if (this.aiServiceAvailable && this.aiService) {
+        // Get session details for context
+        const session = mockSessions.find(s => s.id === sessionId);
+        if (session) {
+          return await this.aiService.generateFollowUpQuestions(
+            session.chief_complaint,
+            [] // Could be enhanced to include user's medical history
+          );
+        }
+      }
+      
+      // Fallback questions
+      return [
+        'How long have you been experiencing these symptoms?',
+        'Have you had similar symptoms before?',
+        'Are you currently taking any medications?',
+        'Have you noticed any triggers that make symptoms worse?',
+        'Are there any other symptoms you\'re experiencing?'
+      ];
+    } catch (error) {
+      console.error('Failed to generate follow-up questions:', error);
+      return [
+        'How long have you been experiencing these symptoms?',
+        'Have you had similar symptoms before?',
+        'Are you currently taking any medications?'
+      ];
+    }
   }
 }
 

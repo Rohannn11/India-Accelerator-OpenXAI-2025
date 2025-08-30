@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { symptomService } from '../../services/symptomService';
+import { ServiceStatus } from '../Common/ServiceStatus';
 import { Plus, History, TrendingUp, Calendar, Download } from 'lucide-react';
 import type { SymptomSession } from '../../types/medical';
 
@@ -52,6 +53,11 @@ export function Dashboard() {
         <p className="text-gray-600">
           Your health guidance dashboard. Start a new symptom assessment or review your history.
         </p>
+      </div>
+
+      {/* AI Service Status */}
+      <div className="mb-8">
+        <ServiceStatus />
       </div>
 
       {/* Quick Actions */}

@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-export interface OllamaConfig {
-  baseUrl: string;
+export interface APIConfig {
+  provider: 'openai' | 'anthropic' | 'google' | 'custom';
+  apiKey: string;
+  baseUrl?: string;
   model: string;
   timeout: number;
 }
@@ -26,49 +28,152 @@ export interface SymptomAnalysisResponse {
   medical_disclaimer: string;
 }
 
-export class OllamaService {
-  private config: OllamaConfig;
+export class APIService {
+  private config: APIConfig;
 
-  constructor(config: OllamaConfig = {
-    baseUrl: 'http://localhost:11434',
-    model: 'llama3.2:3b',
-    timeout: 30000
-  }) {
+  constructor(config: APIConfig) {
     this.config = config;
   }
 
-  private async makeRequest(prompt: string): Promise<string> {
+  async analyzeSymptoms(request: SymptomAnalysisRequest): Promise<SymptomAnalysisResponse> {
+    const prompt = this.buildMedicalPrompt(request);
+    
     try {
-      const response = await axios.post(`${this.config.baseUrl}/api/generate`, {
-        model: this.config.model,
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.1,
-          top_p: 0.9,
-          max_tokens: 2000
-        }
-      }, {
-        timeout: this.config.timeout
-      });
+      let response: string;
+      
+      switch (this.config.provider) {
+        case 'openai':
+          response = await this.callOpenAI(prompt);
+          break;
+        case 'anthropic':
+          response = await this.callAnthropic(prompt);
+          break;
+        case 'google':
+          response = await this.callGoogle(prompt);
+          break;
+        case 'custom':
+          response = await this.callCustomAPI(prompt);
+          break;
+        default:
+          throw new Error('Unsupported API provider');
+      }
 
-      return response.data.response;
+      return this.parseAIResponse(response);
     } catch (error) {
-      console.error('Ollama API error:', error);
-      throw new Error('Failed to connect to AI service. Please ensure Ollama is running locally.');
+      console.error('API call failed:', error);
+      return this.fallbackAnalysis(request);
     }
   }
 
-  async analyzeSymptoms(request: SymptomAnalysisRequest): Promise<SymptomAnalysisResponse> {
-    const medicalPrompt = this.buildMedicalPrompt(request);
-    
-    try {
-      const response = await this.makeRequest(medicalPrompt);
-      return this.parseAIResponse(response);
-    } catch (error) {
-      // Fallback to basic analysis if AI fails
-      return this.fallbackAnalysis(request);
+  private async callOpenAI(prompt: string): Promise<string> {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: this.config.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a medical AI assistant. Always prioritize patient safety and provide conservative medical guidance.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 2000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.config.timeout
+      }
+    );
+
+    return response.data.choices[0].message.content;
+  }
+
+  private async callAnthropic(prompt: string): Promise<string> {
+    const response = await axios.post(
+      'https://api.anthropic.com/v1/messages',
+      {
+        model: this.config.model,
+        max_tokens: 2000,
+        temperature: 0.1,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      },
+      {
+        headers: {
+          'x-api-key': this.config.apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        },
+        timeout: this.config.timeout
+      }
+    );
+
+    return response.data.content[0].text;
+  }
+
+  private async callGoogle(prompt: string): Promise<string> {
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/${this.config.model}:generateContent`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2000
+        }
+      },
+      {
+        params: {
+          key: this.config.apiKey
+        },
+        timeout: this.config.timeout
+      }
+    );
+
+    return response.data.candidates[0].content.parts[0].text;
+  }
+
+  private async callCustomAPI(prompt: string): Promise<string> {
+    if (!this.config.baseUrl) {
+      throw new Error('Custom API base URL is required');
     }
+
+    const response = await axios.post(
+      this.config.baseUrl,
+      {
+        prompt,
+        model: this.config.model,
+        temperature: 0.1,
+        max_tokens: 2000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.config.timeout
+      }
+    );
+
+    return response.data.response || response.data.text || response.data.content;
   }
 
   private buildMedicalPrompt(request: SymptomAnalysisRequest): string {
@@ -203,7 +308,7 @@ Focus on safety and always err on the side of caution.`;
   }
 
   private fallbackAnalysis(request: SymptomAnalysisRequest): SymptomAnalysisResponse {
-    // Basic fallback analysis when AI service is unavailable
+    // Basic fallback analysis when API fails
     const { symptoms } = request;
     const lowerSymptoms = symptoms.toLowerCase();
     
@@ -228,7 +333,7 @@ Focus on safety and always err on the side of caution.`;
       recommendations: ['Consult a healthcare provider for proper evaluation'],
       red_flags: redFlags,
       confidence: 0.5,
-      explanation: 'Basic symptom analysis completed. AI service unavailable.',
+      explanation: 'Basic symptom analysis completed. API service unavailable.',
       next_steps: ['Seek professional medical advice'],
       follow_up_questions: [],
       medical_disclaimer: 'This is a basic analysis and should not replace professional medical evaluation.'
@@ -243,7 +348,25 @@ Focus on safety and always err on the side of caution.`;
     Return only the questions, one per line, without numbering.`;
 
     try {
-      const response = await this.makeRequest(prompt);
+      let response: string;
+      
+      switch (this.config.provider) {
+        case 'openai':
+          response = await this.callOpenAI(prompt);
+          break;
+        case 'anthropic':
+          response = await this.callAnthropic(prompt);
+          break;
+        case 'google':
+          response = await this.callGoogle(prompt);
+          break;
+        case 'custom':
+          response = await this.callCustomAPI(prompt);
+          break;
+        default:
+          throw new Error('Unsupported API provider');
+      }
+
       const questions = response.split('\n').filter(q => q.trim().length > 0);
       return questions.slice(0, 5); // Limit to 5 questions
     } catch (error) {
@@ -260,7 +383,15 @@ Focus on safety and always err on the side of caution.`;
 
   async checkServiceHealth(): Promise<boolean> {
     try {
-      await axios.get(`${this.config.baseUrl}/api/tags`, { timeout: 5000 });
+      // Test with a simple prompt
+      const testPrompt = 'Hello, this is a health check. Please respond with "OK".';
+      await this.analyzeSymptoms({
+        symptoms: 'test',
+        userAge: 25,
+        userGender: 'other',
+        medicalHistory: [],
+        conversationHistory: []
+      });
       return true;
     } catch (error) {
       return false;
@@ -268,4 +399,36 @@ Focus on safety and always err on the side of caution.`;
   }
 }
 
-export const ollamaService = new OllamaService();
+// Pre-configured API services
+export const createOpenAIService = (apiKey: string, model: string = 'gpt-3.5-turbo') => 
+  new APIService({
+    provider: 'openai',
+    apiKey,
+    model,
+    timeout: 30000
+  });
+
+export const createAnthropicService = (apiKey: string, model: string = 'claude-3-haiku-20240307') => 
+  new APIService({
+    provider: 'anthropic',
+    apiKey,
+    model,
+    timeout: 30000
+  });
+
+export const createGoogleService = (apiKey: string, model: string = 'gemini-pro') => 
+  new APIService({
+    provider: 'google',
+    apiKey,
+    model,
+    timeout: 30000
+  });
+
+export const createCustomService = (apiKey: string, baseUrl: string, model: string) => 
+  new APIService({
+    provider: 'custom',
+    apiKey,
+    baseUrl,
+    model,
+    timeout: 30000
+  });
