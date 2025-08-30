@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, AlertCircle } from 'lucide-react';
+import { Send, Bot, User, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
-import { ConfidenceMeter } from '../Common/ConfidenceMeter';
-import { EmergencyAlert } from '../Common/EmergencyAlert';
 import type { ChatMessage as ChatMessageType, TriageResult } from '../../types/medical';
 
 interface ChatInterfaceProps {
@@ -44,19 +42,28 @@ export function ChatInterface({
     window.open('tel:911', '_self');
   };
 
-  const showEmergencyAlert = triageResult?.priority === 'emergency' || 
-    triageResult?.red_flags.some(flag => flag.toLowerCase().includes('emergency'));
+  const showEmergencyAlert = triageResult?.priority === 'emergency';
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Emergency Alert */}
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Emergency Alert - Only show for emergency cases */}
       {showEmergencyAlert && (
-        <div className="p-4 border-b border-gray-200">
-          <EmergencyAlert
-            message="Critical symptoms detected that may require immediate medical attention."
-            actionRequired="Please contact emergency services or go to the nearest emergency room immediately."
-            onCall911={handleCall911}
-          />
+        <div className="bg-red-50 border-b border-red-200 p-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-800 mb-1">Emergency Alert</h3>
+              <p className="text-sm text-red-700 mb-3">
+                Critical symptoms detected that may require immediate medical attention.
+              </p>
+              <button
+                onClick={handleCall911}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              >
+                Call Emergency Services
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -67,57 +74,94 @@ export function ChatInterface({
         ))}
         
         {loading && (
-          <div className="flex items-center space-x-2 text-gray-500">
-            <Bot className="w-5 h-5 animate-pulse" />
-            <span className="text-sm">AI is analyzing your symptoms...</span>
+          <div className="flex items-center space-x-3 bg-white rounded-lg p-4 shadow-sm">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <Bot className="w-4 h-4 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <div className="text-sm font-medium text-gray-900">AI Analysis</div>
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600">Analyzing your symptoms...</div>
+            </div>
           </div>
         )}
         
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Triage Results */}
-      {triageResult && (
-        <div className="border-t border-gray-200 p-4 bg-gray-50">
-          <div className="space-y-3">
-            <ConfidenceMeter confidence={triageResult.confidence} />
-            
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-gray-800">Assessment Summary</h4>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+      {/* Assessment Results - Clean, organized display */}
+      {triageResult && !showEmergencyAlert && (
+        <div className="bg-white border-t border-gray-200 p-4">
+          <div className="space-y-4">
+            {/* Priority and Confidence */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
                   triageResult.priority === 'emergency' ? 'bg-red-100 text-red-800' :
                   triageResult.priority === 'urgent' ? 'bg-yellow-100 text-yellow-800' :
                   'bg-green-100 text-green-800'
                 }`}>
-                  {triageResult.priority.toUpperCase()}
-                </span>
+                  {triageResult.priority.replace('_', ' ').toUpperCase()}
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{Math.round(triageResult.confidence * 100)}% Confidence</span>
+                </div>
               </div>
-              
-              <p className="text-sm text-gray-600 mb-3">
+            </div>
+
+            {/* Assessment Summary */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="font-semibold text-gray-900 mb-2">Assessment Summary</h4>
+              <p className="text-sm text-gray-700 leading-relaxed">
                 {triageResult.explanation}
               </p>
-              
-              {triageResult.recommendations.length > 0 && (
-                <div>
-                  <h5 className="text-sm font-medium text-gray-800 mb-1">Recommendations:</h5>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    {triageResult.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start space-x-2">
-                        <span className="text-blue-600">•</span>
-                        <span>{rec}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
+
+            {/* Recommendations */}
+            {triageResult.recommendations.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Recommendations</h4>
+                <div className="space-y-2">
+                  {triageResult.recommendations.map((rec, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span className="text-sm text-gray-700">{rec}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Red Flags - Only show if present */}
+            {triageResult.red_flags.length > 0 && (
+              <div>
+                <h4 className="font-semibold text-red-800 mb-2 flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Red Flags</span>
+                </h4>
+                <div className="space-y-1">
+                  {triageResult.red_flags.map((flag, index) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <span className="text-sm text-red-700">{flag}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Input Area */}
-      <div className="border-t border-gray-200 p-4">
+      <div className="bg-white border-t border-gray-200 p-4">
         <form onSubmit={handleSubmit} className="flex space-x-3">
           <div className="flex-1">
             <input
@@ -137,10 +181,6 @@ export function ChatInterface({
             <Send className="w-5 h-5" />
           </button>
         </form>
-        
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          This is not medical advice. Always consult healthcare professionals for medical concerns.
-        </p>
       </div>
     </div>
   );
