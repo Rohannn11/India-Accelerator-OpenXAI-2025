@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authService } from '../services/authService';
+import { mockAuthService } from '../services/mockAuthService';
 import type { User } from '../types/medical';
 
 interface AuthContextType {
@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check current session
     const checkUser = async () => {
       try {
-        const currentUser = await authService.getCurrentUser();
+        const currentUser = await mockAuthService.getCurrentUser();
         if (currentUser) {
           // Fetch full user profile from database
           // This would be implemented when database is set up
@@ -40,27 +40,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const result = await authService.signIn(email, password);
+    const result = await mockAuthService.signIn(email, password);
     if (result.user) {
       setUser(result.user as User);
     }
   };
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
-    const result = await authService.signUp(email, password, userData);
+    const result = await mockAuthService.signUp(email, password, userData);
     if (result.user) {
       setUser(result.user as User);
     }
   };
 
   const signOut = async () => {
-    await authService.signOut();
+    await mockAuthService.signOut();
     setUser(null);
   };
 
   const updateProfile = async (updates: Partial<User>) => {
     if (!user) throw new Error('No user logged in');
-    const updatedUser = await authService.updateProfile(user.id, updates);
+    const updatedUser = await mockAuthService.updateProfile(user.id, updates);
     setUser(updatedUser);
   };
 
