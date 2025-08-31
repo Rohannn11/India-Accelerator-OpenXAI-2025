@@ -140,6 +140,7 @@ export class SymptomService {
     return mockSessions[sessionIndex];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async analyzeSymptoms(symptoms: string[], medicalHistory: string[]): Promise<TriageResult> {
     // Simulate AI analysis delay
     await new Promise(resolve => setTimeout(resolve, 2000));
